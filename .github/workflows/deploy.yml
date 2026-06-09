@@ -1,18 +1,15 @@
 name: Deploy POOM-ELK
-
 on:
   push:
     branches:
       - main
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Copy config files to ELK server
+      - name: Copy files to ELK server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.ELK_SERVER_HOST }}
@@ -21,9 +18,8 @@ jobs:
           proxy_host: ${{ secrets.BASTION_HOST }}
           proxy_username: ${{ secrets.SERVER_USER }}
           proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "config/"
-          target: "/opt/elk/"
-
+          source: "docker-compose-elk.yml,config/"
+          target: "/opt/elk"
       - name: Deploy to ELK server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -33,7 +29,8 @@ jobs:
           proxy_host: ${{ secrets.BASTION_HOST }}
           proxy_username: ${{ secrets.SERVER_USER }}
           proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
           script: |
             cd /opt/elk
-            docker compose --env-file .env pull
-            docker compose --env-file .env up -d
+            docker compose -f docker-compose-elk.yml --env-file .env pull
+            docker compose -f docker-compose-elk.yml --env-file .env up -d
