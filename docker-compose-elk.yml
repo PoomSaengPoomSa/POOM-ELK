@@ -1,0 +1,59 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.0
+    container_name: elasticsearch
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./data:/usr/share/elasticsearch/data
+    command: >
+      bash -c '
+        bin/elasticsearch-plugin install --batch repository-s3 || true;
+        bin/elasticsearch-keystore create || true;
+        echo "$AWS_ACCESS_KEY_ID" | bin/elasticsearch-keystore add --stdin --force s3.client.default.access_key || true;
+        echo "$AWS_SECRET_ACCESS_KEY" | bin/elasticsearch-keystore add --stdin --force s3.client.default.secret_key || true;
+        exec /usr/local/bin/docker-entrypoint.sh eswrapper
+      '
+    restart: always
+    networks:
+      - poom-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.3.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    restart: always
+    networks:
+      - poom-network
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:9.3.0
+    container_name: logstash
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./config/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    restart: always
+    networks:
+      - poom-network
+
+networks:
+  poom-network:
+    name: poom-network
+    driver: bridge
