@@ -15,9 +15,6 @@ jobs:
           host: ${{ secrets.ELK_SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          proxy_host: ${{ secrets.BASTION_HOST }}
-          proxy_username: ${{ secrets.SERVER_USER }}
-          proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose-elk.yml,config/"
           target: "/opt/elk"
       - name: Deploy to ELK server
@@ -26,9 +23,6 @@ jobs:
           host: ${{ secrets.ELK_SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          proxy_host: ${{ secrets.BASTION_HOST }}
-          proxy_username: ${{ secrets.SERVER_USER }}
-          proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 30m
           script: |
             cd /opt/elk
